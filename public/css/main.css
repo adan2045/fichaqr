@@ -1,14 +1,220 @@
-@import "reset.css";
-@import "grid.css";
-@import "nav.css";
-@import "footer.css";
-@import "menu.css";
-@import "login.css"; 
-@import "registro.css"; 
-@import "inicio.css";
-@import "cuenta.css";
-@import "stylo.css";
-@import "vistaCajero.css";
-@import "listado.css";
-@import "crud.css";
-@import "mesa.css";
+/* =========================================================
+   FichaQR — CSS principal (sin librerías)
+   Nota: Landing y Login tienen CSS embebido y SCOPEADO.
+   Este archivo da estilo global a NAV/FOOTER y pantallas internas.
+   ========================================================= */
+
+:root{
+  --bg:#07070c;
+  --surface:rgba(18,18,28,.70);
+  --surface2:rgba(12,12,18,.45);
+  --border:rgba(255,255,255,.10);
+  --text:rgba(255,255,255,.92);
+  --muted:rgba(255,255,255,.62);
+  --accent:#00e5a0;
+  --accent2:#7c3aed;
+  --danger:#ff3b3b;
+  --warn:#f6c343;
+  --shadow:0 18px 55px rgba(0,0,0,.45);
+  --radius:18px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 700px at 20% 0%, rgba(124,58,237,.14), transparent 60%),
+    radial-gradient(900px 600px at 85% 20%, rgba(0,229,160,.10), transparent 60%),
+    var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+}
+
+a{color:inherit}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+
+.muted{color:var(--muted)}
+
+/* ================= NAV ================= */
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:50;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 18px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background:rgba(7,7,12,.65);
+  backdrop-filter: blur(12px);
+}
+
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{
+  width:40px;height:40px;
+  border-radius:12px;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg, rgba(124,58,237,.95), rgba(0,229,160,.85));
+  color:#06060b;
+  font-weight:1000;
+}
+.logo-title{font-weight:950;letter-spacing:.02em}
+.logo-sub{
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--accent);
+}
+
+.toplinks{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}
+.toplink{
+  text-decoration:none;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(12,12,18,.35);
+  font-size:13px;
+  font-weight:800;
+}
+.toplink:hover{border-color:rgba(255,255,255,.18);background:rgba(12,12,18,.55)}
+.toplink.danger{border-color:rgba(255,59,59,.35);background:rgba(255,59,59,.10)}
+.toplink.danger:hover{border-color:rgba(255,59,59,.55);background:rgba(255,59,59,.15)}
+
+.chip{
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(0,229,160,.25);
+  background:rgba(0,229,160,.10);
+  color:rgba(255,255,255,.92);
+  font-size:12px;
+  font-weight:900;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
+
+/* ================= LAYOUT ================= */
+.fq-container{max-width:1080px;margin:0 auto;padding:22px 14px 44px}
+
+.fq-card{
+  border:1px solid var(--border);
+  background:var(--surface2);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
+}
+
+.fq-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* ================= BUTTONS ================= */
+.fq-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:10px;
+  padding:10px 14px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(12,12,18,.40);
+  color:rgba(255,255,255,.92);
+  text-decoration:none;
+  font-weight:900;
+  font-size:13px;
+  cursor:pointer;
+  transition:transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+.fq-btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.16);background:rgba(12,12,18,.58)}
+
+.fq-btn-primary{
+  border-color:rgba(0,229,160,.35);
+  background:linear-gradient(135deg, rgba(0,229,160,.18), rgba(124,58,237,.12));
+}
+.fq-btn-primary:hover{border-color:rgba(0,229,160,.55);box-shadow:0 12px 28px rgba(0,229,160,.08), 0 12px 28px rgba(124,58,237,.10)}
+
+.fq-btn-danger{border-color:rgba(255,59,59,.35);background:rgba(255,59,59,.10)}
+.fq-btn-danger:hover{border-color:rgba(255,59,59,.55);background:rgba(255,59,59,.15)}
+
+.fq-btn-warn{border-color:rgba(246,195,67,.35);background:rgba(246,195,67,.10)}
+.fq-btn-warn:hover{border-color:rgba(246,195,67,.55);background:rgba(246,195,67,.15)}
+
+/* ================= FORMS ================= */
+.form{display:grid;gap:12px}
+.form .row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+
+.label{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+  font-size:12px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.78);
+  display:block;
+  margin-bottom:6px;
+}
+
+.input{
+  width:100%;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(12,12,18,.55);
+  color:rgba(255,255,255,.92);
+  padding:11px 12px;
+  border-radius:14px;
+  outline:none;
+  font-size:14px;
+}
+
+.input:focus{
+  border-color:rgba(0,229,160,.40);
+  box-shadow:0 0 0 4px rgba(0,229,160,.10);
+  background:rgba(12,12,18,.70);
+}
+
+/* ================= ALERTS ================= */
+.fq-alert{
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(12,12,18,.40);
+  margin-bottom:12px;
+  line-height:1.45;
+}
+.alert-ok{border-color:rgba(0,229,160,.25);background:rgba(0,229,160,.10)}
+.alert-danger{border-color:rgba(255,59,59,.35);background:rgba(255,59,59,.10)}
+
+/* ================= TABLES ================= */
+.fq-table-wrap{overflow:auto;border-radius:16px;border:1px solid rgba(255,255,255,.08)}
+.fq-table{width:100%;border-collapse:collapse;min-width:720px;background:rgba(10,10,16,.35)}
+.fq-table th,.fq-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;font-size:13px}
+.fq-table th{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.74);
+  font-size:12px;
+}
+
+.fq-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:4px 8px;
+  border-radius:999px;
+  font-weight:950;
+  font-size:11px;
+  border:1px solid rgba(255,255,255,.12);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
+.fq-badge-in{border-color:rgba(0,229,160,.30);background:rgba(0,229,160,.10);color:rgba(255,255,255,.92)}
+.fq-badge-out{border-color:rgba(124,58,237,.30);background:rgba(124,58,237,.10);color:rgba(255,255,255,.92)}
+
+/* ================= FOOTER ================= */
+footer#contact{
+  border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(7,7,12,.65);
+  backdrop-filter: blur(12px);
+}
+.footer-content{max-width:1080px;margin:0 auto;padding:18px 14px 22px;text-align:center}
+.footer-content h3{margin:0 0 6px}
+.footer-content p{margin:0;color:var(--muted);font-size:13px}
+
+/* Responsive helpers */
+@media (max-width: 860px){
+  .form .row{grid-template-columns:1fr}
+}
