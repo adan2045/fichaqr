@@ -72,7 +72,7 @@
         </form>
         
         <div class="registro-footer">
-            <p>¿Ya tienes una cuenta? <a href="http://localhost/MVC2/public/login/login">Iniciar Sesión</a></p>
+            <p>¿Ya tienes una cuenta? <a href="http://localhost/fichaqr/public/login/login">Iniciar Sesión</a></p>
         </div>
     </div>
 
