@@ -1,7 +1,7 @@
 <?php 
 class Controller
 {
-    protected $title = 'RestaurantOS | ';// nombre del proyecto 
+    protected $title = 'FichaQR | ';// nombre del proyecto 
     protected static $sessionStatus;
     public static $ruta;
 

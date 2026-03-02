@@ -206,8 +206,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation M
 
 /* ================= FOOTER ================= */
 footer#contact{
-  border-top:1px solid rgba(255,255,255,.08);
-  background:rgba(7,7,12,.65);
+  border-top: 1px solid rgba(255,255,255,.08);
+  background: rgba(120,120,120,.18); /* gris */
   backdrop-filter: blur(12px);
 }
 .footer-content{max-width:1080px;margin:0 auto;padding:18px 14px 22px;text-align:center}
