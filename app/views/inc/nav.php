@@ -17,7 +17,10 @@
 
   <nav class="toplinks">
     <a class="toplink" href="<?=$base?>/home/index">Inicio</a>
-    <a class="toplink" href="<?=$base?>/terminal/index">Terminal QR</a>
+
+    <?php if ($authed): ?>
+      <a class="toplink" href="<?=$base?>/terminal/index">Terminal QR</a>
+    <?php endif; ?>
 
     <?php if ($authed && $esAdmin): ?>
       <a class="toplink" href="<?=$base?>/admin/gestion">Panel</a>

@@ -13,24 +13,23 @@ class SiteController extends Controller
 
 	public static function head()
 	{
-		static::path();
 		$head = file_get_contents(APP_PATH . '/views/inc/head.php');
-		$head = str_replace('#PATH#', self::$ruta, $head);
+		$head = str_replace('#PATH#', \App::baseUrl() . '/public', $head);
 		return $head;
 	}
 
 	public static function nav()
-{
-    $ruta = \App::$ruta;
-    ob_start();
-    include APP_PATH . '/views/inc/nav.php';
-    return ob_get_clean();
-}
+	{
+		$ruta = \App::$ruta;
+		ob_start();
+		include APP_PATH . '/views/inc/nav.php';
+		return ob_get_clean();
+	}
+
 	public static function footer()
 	{
-		static::path();
 		$footer = file_get_contents(APP_PATH . '/views/inc/footer.php');
-		$footer = str_replace('#PATH#', self::$ruta, $footer);
+		$footer = str_replace('#PATH#', \App::baseUrl() . '/public', $footer);
 		return $footer;
 	}
 
@@ -38,11 +37,9 @@ class SiteController extends Controller
     	require_once(APP_PATH.'librerias/php/phpqrcode/qrlib.php');
 
 		$ruta_archivoNombre = $directorio.'/'.$nombreQr.'.png';
-		// echo $ruta_archivoNombre."<hr>";
 
 		$contenido = $url;
 		$respuesta = \QRcode::png($contenido, $ruta_archivoNombre, QR_ECLEVEL_L, 10);
-		// var_dump($respuesta);
 	}
 	
 	public function actionTestQr(){
