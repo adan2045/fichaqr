@@ -1,0 +1,5 @@
+Options -Indexes
+# Permitir acceso solo a archivos estáticos
+<FilesMatch "\.(pdf|jpg|jpeg|png)$">
+    Allow from all
+</FilesMatch>

@@ -148,3 +148,24 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+-- ============================================================
+-- ACTUALIZACIÓN: tabla documentos_empleado (v2)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS `documentos_empleado` (
+  `id`          bigint(20)   NOT NULL AUTO_INCREMENT,
+  `empleado_id` int(11)      NOT NULL,
+  `tipo`        enum('certificado','recibo') NOT NULL DEFAULT 'certificado',
+  `nombre_archivo` varchar(255) NOT NULL,
+  `ruta_archivo`   varchar(500) NOT NULL,
+  `subido_por`  int(11)      DEFAULT NULL,
+  `subido_en`   timestamp    NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_docs_empleado` (`empleado_id`, `tipo`),
+  CONSTRAINT `fk_docs_empleado` FOREIGN KEY (`empleado_id`) REFERENCES `empleados` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_docs_subido_por` FOREIGN KEY (`subido_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Índice adicional en fichadas para performance
+ALTER TABLE `fichadas` ADD INDEX IF NOT EXISTS `idx_tipo_fecha` (`tipo`, `fecha_hora`);

@@ -1,0 +1,22 @@
+landing home/inicio
+http://localhost/fichaqr/home/index
+
+login
+http://localhost/fichaqr/login/login
+
+
+
+
+
+
+
+
+
+
+Credenciales creadas (pass: 123456)
+
+admin@demo.local / 123456
+
+jefe@demo.local / 123456
+
+empleado1@demo.local / 123456

@@ -3,17 +3,24 @@ namespace app\models;
 
 use \DataBase;
 
-/**
- * FichaQR - FichadaModel
- * Tabla: fichadas(empleado_id,fecha_hora,tipo,origen,creado_por,comentario,editado_por,editado_en,eliminado)
- */
 class FichadaModel
 {
+    /** Fichada en tiempo real (NOW()) */
     public function crear(int $empleadoId, string $tipo, string $origen = 'web', ?int $creadoPor = null, ?string $comentario = null): int
     {
         $sql = "INSERT INTO fichadas (empleado_id, fecha_hora, tipo, origen, creado_por, comentario)
                 VALUES (?, NOW(), ?, ?, ?, ?)";
         DataBase::execute($sql, [$empleadoId, $tipo, $origen, $creadoPor, $comentario]);
+        $row = DataBase::query("SELECT LAST_INSERT_ID() AS id", [], true);
+        return (int)($row[0]['id'] ?? 0);
+    }
+
+    /** Fichada con fecha/hora manual (admin) */
+    public function crearManual(int $empleadoId, string $fechaHora, string $tipo, string $origen = 'admin', ?int $creadoPor = null, ?string $comentario = null): int
+    {
+        $sql = "INSERT INTO fichadas (empleado_id, fecha_hora, tipo, origen, creado_por, comentario)
+                VALUES (?, ?, ?, ?, ?, ?)";
+        DataBase::execute($sql, [$empleadoId, $fechaHora, $tipo, $origen, $creadoPor, $comentario]);
         $row = DataBase::query("SELECT LAST_INSERT_ID() AS id", [], true);
         return (int)($row[0]['id'] ?? 0);
     }
@@ -37,7 +44,7 @@ class FichadaModel
                 WHERE f.eliminado = 0
                   AND f.fecha_hora BETWEEN ? AND ?
                   $whereEmpleado
-                ORDER BY f.fecha_hora DESC";
+                ORDER BY f.empleado_id ASC, f.fecha_hora DESC";
 
         return DataBase::query($sql, $params, true);
     }

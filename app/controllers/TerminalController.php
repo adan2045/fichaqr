@@ -14,7 +14,7 @@ use app\models\FichadaModel;
  */
 class TerminalController extends Controller
 {
-    public function actionIndex()
+    public function actionIndex($var = null)
     {
         static::path();
         $head = SiteController::head();

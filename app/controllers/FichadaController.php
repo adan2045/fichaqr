@@ -9,9 +9,6 @@ use app\models\FichadaModel;
 
 class FichadaController extends Controller
 {
-    /**
-     * Panel empleado: Mis fichadas (con filtro)
-     */
     public function actionMis()
     {
         SesionController::requireLogin();
@@ -19,7 +16,6 @@ class FichadaController extends Controller
 
         $empleadoId = SesionController::empleadoId();
         if (!$empleadoId) {
-            // Si el usuario no está vinculado a empleado, lo tratamos como admin
             header('Location: ' . App::baseUrl() . '/admin/gestion');
             exit;
         }
@@ -43,34 +39,29 @@ class FichadaController extends Controller
         $footer = SiteController::footer();
 
         Response::render($this->viewDir(__NAMESPACE__), 'mis', [
-            'title' => 'Mis fichadas',
-            'head' => $head,
-            'nav' => $nav,
-            'footer' => $footer,
-            'ruta' => App::baseUrl(),
-            'desde' => $desde,
-            'hasta' => $hasta,
-            'lista' => $lista,
+            'title'    => 'Mis fichadas',
+            'head'     => $head,
+            'nav'      => $nav,
+            'footer'   => $footer,
+            'ruta'     => App::baseUrl(),
+            'desde'    => $desde,
+            'hasta'    => $hasta,
+            'lista'    => $lista,
             'empleado' => $empleado,
-            'flash' => $flash,
+            'flash'    => $flash,
         ]);
     }
 
-    /**
-     * Registrar fichada desde terminal QR (o web)
-     */
     public function actionRegistrarqr()
     {
-        // Terminal puede funcionar sin login
         if (session_status() === PHP_SESSION_NONE) session_start();
-
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: ' . App::baseUrl() . '/terminal/index');
             exit;
         }
 
         $empleadoId = (int)($_POST['empleado_id'] ?? 0);
-        $tipo = strtoupper(trim($_POST['tipo'] ?? ''));
+        $tipo       = strtoupper(trim($_POST['tipo'] ?? ''));
         $comentario = trim($_POST['comentario'] ?? '');
 
         if ($empleadoId <= 0 || !in_array($tipo, ['IN','OUT'], true)) {
@@ -92,6 +83,42 @@ class FichadaController extends Controller
         exit;
     }
 
+    /** Nueva fichada manual desde panel admin */
+    public function actionNueva()
+    {
+        SesionController::requireAdmin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . App::baseUrl() . '/admin/gestion');
+            exit;
+        }
+
+        $empleadoId = (int)($_POST['empleado_id'] ?? 0);
+        $fechaHora  = trim($_POST['fecha_hora'] ?? '');
+        $tipo       = strtoupper(trim($_POST['tipo'] ?? ''));
+        $comentario = trim($_POST['comentario'] ?? '');
+
+        if ($empleadoId <= 0 || $fechaHora === '' || !in_array($tipo, ['IN','OUT'], true)) {
+            $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Datos inválidos para crear fichada'];
+            header('Location: ' . App::baseUrl() . '/admin/gestion');
+            exit;
+        }
+
+        // datetime-local = "2026-03-04T18:49" → "2026-03-04 18:49:00"
+        $fechaHora = str_replace('T', ' ', $fechaHora);
+        if (strlen($fechaHora) === 16) $fechaHora .= ':00';
+
+        $fm = new FichadaModel();
+        try {
+            $fm->crearManual($empleadoId, $fechaHora, $tipo, 'admin', (int)($_SESSION['user_id'] ?? 0), $comentario !== '' ? $comentario : null);
+            $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Fichada creada correctamente'];
+        } catch (\Throwable $e) {
+            $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Error: ' . $e->getMessage()];
+        }
+
+        header('Location: ' . App::baseUrl() . '/admin/gestion');
+        exit;
+    }
+
     public function actionEditar()
     {
         SesionController::requireAdmin();
@@ -101,7 +128,7 @@ class FichadaController extends Controller
             exit;
         }
 
-        $fm = new FichadaModel();
+        $fm      = new FichadaModel();
         $fichada = $fm->obtenerPorId($id);
         if (!$fichada) {
             $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Fichada no encontrada'];
@@ -110,16 +137,16 @@ class FichadaController extends Controller
         }
 
         static::path();
-        $head = SiteController::head();
-        $nav = SiteController::nav();
+        $head   = SiteController::head();
+        $nav    = SiteController::nav();
         $footer = SiteController::footer();
 
         Response::render($this->viewDir(__NAMESPACE__), 'editar', [
-            'title' => 'Editar fichada',
-            'head' => $head,
-            'nav' => $nav,
-            'footer' => $footer,
-            'ruta' => App::baseUrl(),
+            'title'   => 'Editar fichada',
+            'head'    => $head,
+            'nav'     => $nav,
+            'footer'  => $footer,
+            'ruta'    => App::baseUrl(),
             'fichada' => $fichada,
         ]);
     }
@@ -132,20 +159,21 @@ class FichadaController extends Controller
             exit;
         }
 
-        $id = (int)($_POST['id'] ?? 0);
-        $fecha_hora = trim($_POST['fecha_hora'] ?? '');
-        $tipo = strtoupper(trim($_POST['tipo'] ?? ''));
+        $id         = (int)($_POST['id'] ?? 0);
+        $fechaHora  = str_replace('T', ' ', trim($_POST['fecha_hora'] ?? ''));
+        if (strlen($fechaHora) === 16) $fechaHora .= ':00';
+        $tipo       = strtoupper(trim($_POST['tipo'] ?? ''));
         $comentario = trim($_POST['comentario'] ?? '');
 
-        if ($id <= 0 || $fecha_hora === '' || !in_array($tipo, ['IN','OUT'], true)) {
+        if ($id <= 0 || $fechaHora === '' || !in_array($tipo, ['IN','OUT'], true)) {
             $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Datos inválidos para actualizar'];
-            header('Location: ' . App::baseUrl() . '/fichada/editar?id=' . $id);
+            header('Location: ' . App::baseUrl() . '/admin/gestion');
             exit;
         }
 
         $fm = new FichadaModel();
-        $fm->actualizar($id, $fecha_hora, $tipo, $comentario !== '' ? $comentario : null, (int)($_SESSION['user_id'] ?? 0));
-        $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Fichada actualizada'];
+        $fm->actualizar($id, $fechaHora, $tipo, $comentario !== '' ? $comentario : null, (int)($_SESSION['user_id'] ?? 0));
+        $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Fichada #' . $id . ' actualizada'];
         header('Location: ' . App::baseUrl() . '/admin/gestion');
         exit;
     }
@@ -153,11 +181,13 @@ class FichadaController extends Controller
     public function actionEliminar()
     {
         SesionController::requireAdmin();
-        $id = (int)($_GET['id'] ?? 0);
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        $id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
         if ($id > 0) {
             $fm = new FichadaModel();
             $fm->eliminar($id, (int)($_SESSION['user_id'] ?? 0));
-            $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Fichada eliminada'];
+            $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Fichada #' . $id . ' eliminada'];
         }
         header('Location: ' . App::baseUrl() . '/admin/gestion');
         exit;
