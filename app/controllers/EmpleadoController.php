@@ -148,7 +148,7 @@ class EmpleadoController extends Controller
         ]);
     }
 
-    /** Gestión de documentos del empleado */
+    /** Gestión de documentos del empleado — admin/jefe */
     public function actionDocs()
     {
         SesionController::requireAdmin();
@@ -166,7 +166,6 @@ class EmpleadoController extends Controller
             exit;
         }
 
-        // Directorio de documentos
         $docsBase  = realpath(__DIR__ . '/../../public') . '/docs/empleados/' . $id;
         $certDir   = $docsBase . '/certificados';
         $reciboDir = $docsBase . '/recibos';
@@ -185,8 +184,8 @@ class EmpleadoController extends Controller
             $archivo = $_FILES['documento'];
 
             if ($archivo['error'] === UPLOAD_ERR_OK) {
-                $ext      = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
-                $allowed  = ['pdf','jpg','jpeg','png'];
+                $ext     = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
+                $allowed = ['pdf','jpg','jpeg','png'];
                 if (!in_array($ext, $allowed)) {
                     $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Solo se permiten PDF, JPG, PNG'];
                 } else {
@@ -213,8 +212,8 @@ class EmpleadoController extends Controller
             exit;
         }
 
-        $certificados = file_exists($certDir)   ? array_values(array_filter(scandir($certDir),   fn($f) => !in_array($f,['.','..','.gitkeep']))) : [];
-        $recibos      = file_exists($reciboDir)  ? array_values(array_filter(scandir($reciboDir), fn($f) => !in_array($f,['.','..','.gitkeep']))) : [];
+        $certificados = file_exists($certDir)  ? array_values(array_filter(scandir($certDir),   fn($f) => !in_array($f, ['.','..','.gitkeep']))) : [];
+        $recibos      = file_exists($reciboDir) ? array_values(array_filter(scandir($reciboDir), fn($f) => !in_array($f, ['.','..','.gitkeep']))) : [];
 
         static::path();
         $head   = SiteController::head();
@@ -234,7 +233,7 @@ class EmpleadoController extends Controller
         ]);
     }
 
-    /** Mis documentos — vista del empleado (solo lectura) */
+    /** Mis documentos — el empleado sube/elimina sus certificados, recibos solo lectura */
     public function actionMisdocs()
     {
         SesionController::requireLogin();
@@ -252,8 +251,45 @@ class EmpleadoController extends Controller
         $certDir   = $docsBase . '/certificados';
         $reciboDir = $docsBase . '/recibos';
 
-        $certificados = (is_dir($certDir))   ? array_values(array_filter(scandir($certDir),   fn($f) => !in_array($f,['.','..','.gitkeep']))) : [];
-        $recibos      = (is_dir($reciboDir))  ? array_values(array_filter(scandir($reciboDir), fn($f) => !in_array($f,['.','..','.gitkeep']))) : [];
+        foreach ([$certDir, $reciboDir] as $dir) {
+            if (!is_dir($dir)) mkdir($dir, 0755, true);
+        }
+
+        $flash = $_SESSION['flash'] ?? null;
+        if (isset($_SESSION['flash'])) unset($_SESSION['flash']);
+
+        // Subir certificado (solo certificados, no recibos)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['documento'])) {
+            $archivo = $_FILES['documento'];
+            if ($archivo['error'] === UPLOAD_ERR_OK) {
+                $ext     = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
+                $allowed = ['pdf','jpg','jpeg','png'];
+                if (!in_array($ext, $allowed)) {
+                    $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Solo se permiten PDF, JPG, PNG'];
+                } else {
+                    $nombre = date('Ymd_His') . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $archivo['name']);
+                    move_uploaded_file($archivo['tmp_name'], $certDir . '/' . $nombre);
+                    $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Certificado subido correctamente'];
+                }
+            } else {
+                $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Error al subir el archivo'];
+            }
+            header('Location: ' . App::baseUrl() . '/empleado/misdocs');
+            exit;
+        }
+
+        // Eliminar certificado propio (solo certificados)
+        if (isset($_GET['del'])) {
+            $safe = basename($_GET['del']);
+            $fp   = $certDir . '/' . $safe;
+            if (file_exists($fp)) unlink($fp);
+            $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Certificado eliminado'];
+            header('Location: ' . App::baseUrl() . '/empleado/misdocs');
+            exit;
+        }
+
+        $certificados = file_exists($certDir)  ? array_values(array_filter(scandir($certDir),   fn($f) => !in_array($f, ['.','..','.gitkeep']))) : [];
+        $recibos      = file_exists($reciboDir) ? array_values(array_filter(scandir($reciboDir), fn($f) => !in_array($f, ['.','..','.gitkeep']))) : [];
 
         static::path();
         $head   = SiteController::head();
@@ -269,7 +305,7 @@ class EmpleadoController extends Controller
             'empleado'     => $empleado,
             'certificados' => $certificados,
             'recibos'      => $recibos,
+            'flash'        => $flash,
         ]);
     }
-
 }
