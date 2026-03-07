@@ -1,59 +1,31 @@
 <?php
 namespace app\controllers;
+
 use \Controller;
 use \Response;
-use \DataBase;
+use \App;
 
 class HomeController extends Controller
 {
+    public function actionIndex($var = null)
+    {
+        // Si está logueado, redirigir directo a Fichar
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (isset($_SESSION['user_id'])) {
+            header('Location: ' . App::baseUrl() . '/terminal/index');
+            exit;
+        }
+        // Si no está logueado, ir al login
+        header('Location: ' . App::baseUrl() . '/login/login');
+        exit;
+    }
 
-	// Constructor
-	public function __construct()
-	{
-
-	}
-	public function actionIndex($var=null)
-	{	
-		$footer = SiteController::footer();
-		$head = SiteController::head();
-		$nav = SiteController::nav();
-		$path = static::path();
-		Response::render($this->viewDir(__NAMESPACE__), "inicio", [
-			"title" => $this->title . "Inicio",
-			'ruta'=>\App::baseUrl(),
-			"head" => $head,
-			"nav" => $nav,
-			"footer" => $footer,
-		]);
-	}
-
-
-	public function actionCrear()
-	{
-		$head = SiteController::head();
-		$nav = SiteController::nav();
-		$path = static::path();
-
-		Response::render($this->viewDir(__NAMESPACE__), "crear", [
-			"title" => $this->title . "Crear usuario",
-			"head" => $head,
-			"nav" => $nav,
-			'ruta'=>self::$ruta,
-		]);
-	}
-
-
-	public function action404()
-	{
-		$head = SiteController::head();
-		Response::render($this->viewDir(__NAMESPACE__), "404", [
-			"title" => $this->title . ' 404 se rompio todo!s',
-			"head" => $head,
-		]);
-	}
-
-	private function actionHola()
-	{
-		echo 'hola';
-	}
+    public function action404()
+    {
+        $head = SiteController::head();
+        Response::render($this->viewDir(__NAMESPACE__), '404', [
+            'title' => 'FichaQR · 404',
+            'head'  => $head,
+        ]);
+    }
 }

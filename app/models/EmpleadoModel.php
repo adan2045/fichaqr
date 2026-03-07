@@ -37,6 +37,22 @@ class EmpleadoModel
         return DataBase::execute($sql, [$legajo, $nombre, $apellido, $dni, $email, $activo, $id]);
     }
 
+    public function obtenerPorLegajo(string $legajo): ?array
+    {
+        // Acepta "001", "EMP-001" o el número directo del id
+        $legajo = trim($legajo);
+        // Intentar por legajo exacto
+        $sql = "SELECT * FROM empleados WHERE legajo = ? AND activo = 1 LIMIT 1";
+        $res = DataBase::query($sql, [$legajo], true);
+        if (!empty($res[0])) return $res[0];
+        // Intentar con prefijo EMP-
+        $conPrefijo = 'EMP-' . ltrim($legajo, '0');
+        $conPrefijoPad = 'EMP-' . str_pad(ltrim($legajo, '0'), 3, '0', STR_PAD_LEFT);
+        $sql2 = "SELECT * FROM empleados WHERE (legajo = ? OR legajo = ?) AND activo = 1 LIMIT 1";
+        $res2 = DataBase::query($sql2, [$conPrefijo, $conPrefijoPad], true);
+        return $res2[0] ?? null;
+    }
+
     public function generarLegajo(): string
     {
         // Busca el mayor número de legajo con formato EMP-NNN

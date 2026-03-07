@@ -16,10 +16,8 @@
   </div>
 
   <nav class="toplinks">
-    <a class="toplink" href="<?=$base?>/home/index">Inicio</a>
-
     <?php if ($authed): ?>
-      <a class="toplink" href="<?=$base?>/terminal/index">Terminal QR</a>
+      <a class="toplink" href="<?=$base?>/terminal/index">Fichar</a>
     <?php endif; ?>
 
     <?php if ($authed && $esAdmin): ?>
