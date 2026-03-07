@@ -37,6 +37,19 @@ class EmpleadoModel
         return DataBase::execute($sql, [$legajo, $nombre, $apellido, $dni, $email, $activo, $id]);
     }
 
+    public function generarLegajo(): string
+    {
+        // Busca el mayor número de legajo con formato EMP-NNN
+        $sql = "SELECT legajo FROM empleados WHERE legajo REGEXP '^EMP-[0-9]+$' ORDER BY CAST(SUBSTRING(legajo,5) AS UNSIGNED) DESC LIMIT 1";
+        $res = DataBase::query($sql, [], true);
+        if (!empty($res[0]['legajo'])) {
+            $num = (int)substr($res[0]['legajo'], 4) + 1;
+        } else {
+            $num = 1;
+        }
+        return 'EMP-' . str_pad($num, 3, '0', STR_PAD_LEFT);
+    }
+
     public function desactivar(int $id): int
     {
         $sql = "UPDATE empleados SET activo = 0 WHERE id = ?";

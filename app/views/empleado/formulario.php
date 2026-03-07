@@ -17,27 +17,32 @@
 
       <div style="height:12px"></div>
 
-      <form method="POST" action="<?=$ruta?>/empleado/guardar" class="form">
+      <?php if (!empty($errores['db'])): ?>
+        <div class="fq-alert fq-alert-danger" style="margin-bottom:12px;"><?=$errores['db']?></div>
+      <?php endif; ?>
+
+      <form method="POST" action="<?=$ruta?>/empleado/formulario" class="form">
+        <input type="hidden" name="legajo" value="">
+
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div>
-            <label class="label">Legajo</label>
-            <input class="input" name="legajo" placeholder="Ej: 1001">
-          </div>
-          <div>
-            <label class="label">DNI</label>
-            <input class="input" name="dni" placeholder="Ej: 12345678">
-          </div>
-          <div>
             <label class="label">Nombre *</label>
-            <input class="input" name="nombre" required>
+            <input class="input" name="nombre" required value="<?=htmlspecialchars($datos['nombre'] ?? '')?>">
+            <?php if (!empty($errores['nombre'])): ?><small style="color:var(--fq-danger)"><?=$errores['nombre']?></small><?php endif; ?>
           </div>
           <div>
             <label class="label">Apellido *</label>
-            <input class="input" name="apellido" required>
+            <input class="input" name="apellido" required value="<?=htmlspecialchars($datos['apellido'] ?? '')?>">
+            <?php if (!empty($errores['apellido'])): ?><small style="color:var(--fq-danger)"><?=$errores['apellido']?></small><?php endif; ?>
           </div>
-          <div style="grid-column: 1 / -1;">
-            <label class="label">Email</label>
-            <input class="input" name="email" type="email" placeholder="nombre@empresa.com">
+          <div>
+            <label class="label">DNI * <small style="color:var(--fq-muted)">(será la contraseña inicial)</small></label>
+            <input class="input" name="dni" placeholder="Ej: 12345678" required value="<?=htmlspecialchars($datos['dni'] ?? '')?>">
+            <?php if (!empty($errores['dni'])): ?><small style="color:var(--fq-danger)"><?=$errores['dni']?></small><?php endif; ?>
+          </div>
+          <div>
+            <label class="label">Email <small style="color:var(--fq-muted)">(será el usuario de acceso)</small></label>
+            <input class="input" name="email" type="email" placeholder="nombre@empresa.com" value="<?=htmlspecialchars($datos['email'] ?? '')?>">
           </div>
         </div>
 

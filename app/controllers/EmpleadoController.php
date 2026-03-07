@@ -6,6 +6,7 @@ use \Response;
 use \App;
 use app\models\EmpleadoModel;
 use app\models\DocumentoModel;
+use app\models\UsuarioModel;
 
 class EmpleadoController extends Controller
 {
@@ -31,20 +32,40 @@ class EmpleadoController extends Controller
 
             if ($datos['nombre']   === '') $errores['nombre']   = 'Requerido';
             if ($datos['apellido'] === '') $errores['apellido'] = 'Requerido';
+            if ($datos['dni']      === '') $errores['dni']      = 'Requerido (se usa como contraseña inicial)';
 
             if (empty($errores)) {
-                $em = new EmpleadoModel();
-                $em->crear(
-                    $datos['legajo']   !== '' ? $datos['legajo']   : null,
-                    $datos['nombre'],
-                    $datos['apellido'],
-                    $datos['dni']      !== '' ? $datos['dni']      : null,
-                    $datos['email']    !== '' ? $datos['email']    : null,
-                    $datos['activo']
-                );
-                $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Empleado creado correctamente'];
-                header('Location: ' . App::baseUrl() . '/empleado/listado');
-                exit;
+                try {
+                    $em = new EmpleadoModel();
+
+                    if ($datos['legajo'] === '') {
+                        $datos['legajo'] = $em->generarLegajo();
+                    }
+
+                    $nuevoId = $em->crear(
+                        $datos['legajo'],
+                        $datos['nombre'],
+                        $datos['apellido'],
+                        $datos['dni'],
+                        $datos['email'] !== '' ? $datos['email'] : null,
+                        $datos['activo']
+                    );
+
+                    // Crear usuario automático con rol empleado
+                    $um           = new UsuarioModel();
+                    $loginUsuario = $datos['email'] !== '' ? $datos['email'] : $datos['legajo'];
+                    $passDefault  = $datos['dni'];
+                    $um->crear($loginUsuario, $passDefault, 'empleado', $nuevoId);
+
+                    $_SESSION['flash'] = [
+                        'type' => 'ok',
+                        'msg'  => "Empleado creado. Usuario: <strong>{$loginUsuario}</strong> · Contraseña: <strong>{$passDefault}</strong>"
+                    ];
+                    header('Location: ' . App::baseUrl() . '/empleado/listado');
+                    exit;
+                } catch (\Exception $e) {
+                    $errores['db'] = 'Error al guardar: ' . $e->getMessage();
+                }
             }
         }
 
@@ -117,18 +138,22 @@ class EmpleadoController extends Controller
             if ($datos['apellido'] === '') $errores['apellido'] = 'Requerido';
 
             if (empty($errores)) {
-                $em->actualizar(
-                    $id,
-                    $datos['legajo']   !== '' ? $datos['legajo']   : null,
-                    $datos['nombre'],
-                    $datos['apellido'],
-                    $datos['dni']      !== '' ? $datos['dni']      : null,
-                    $datos['email']    !== '' ? $datos['email']    : null,
-                    $datos['activo']
-                );
-                $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Empleado actualizado'];
-                header('Location: ' . App::baseUrl() . '/empleado/listado');
-                exit;
+                try {
+                    $em->actualizar(
+                        $id,
+                        $datos['legajo']   !== '' ? $datos['legajo']   : null,
+                        $datos['nombre'],
+                        $datos['apellido'],
+                        $datos['dni']      !== '' ? $datos['dni']      : null,
+                        $datos['email']    !== '' ? $datos['email']    : null,
+                        $datos['activo']
+                    );
+                    $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Empleado actualizado'];
+                    header('Location: ' . App::baseUrl() . '/empleado/listado');
+                    exit;
+                } catch (\Exception $e) {
+                    $errores['db'] = 'Error al guardar: ' . $e->getMessage();
+                }
             }
         }
 
