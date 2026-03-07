@@ -5,6 +5,7 @@ use \Controller;
 use \Response;
 use \App;
 use app\models\EmpleadoModel;
+use app\models\DocumentoModel;
 
 class EmpleadoController extends Controller
 {
@@ -148,72 +149,72 @@ class EmpleadoController extends Controller
         ]);
     }
 
-    /** Gestión de documentos del empleado — admin/jefe */
+    /** Vista global de documentos — admin/jefe ve todos los empleados */
     public function actionDocs()
     {
         SesionController::requireAdmin();
-        $id = (int)($_GET['id'] ?? 0);
-        if ($id <= 0) {
-            header('Location: ' . App::baseUrl() . '/empleado/listado');
-            exit;
-        }
 
-        $em       = new EmpleadoModel();
-        $empleado = $em->obtenerPorId($id);
-        if (!$empleado) {
-            $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Empleado no encontrado'];
-            header('Location: ' . App::baseUrl() . '/empleado/listado');
-            exit;
-        }
-
-        $docsBase  = realpath(__DIR__ . '/../../public') . '/docs/empleados/' . $id;
-        $certDir   = $docsBase . '/certificados';
-        $reciboDir = $docsBase . '/recibos';
-
-        foreach ([$certDir, $reciboDir] as $dir) {
-            if (!is_dir($dir)) mkdir($dir, 0755, true);
-        }
+        $em         = new EmpleadoModel();
+        $dm         = new DocumentoModel();
+        $empleados  = $em->obtenerTodos(true);
+        $publicPath = realpath(__DIR__ . '/../../public');
+        $usuarioId  = (int)($_SESSION['user_id'] ?? 0);
 
         $flash = $_SESSION['flash'] ?? null;
         if (isset($_SESSION['flash'])) unset($_SESSION['flash']);
 
-        // Subir documento
+        // ── Subir documento ──
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['documento'])) {
-            $tipo    = $_POST['tipo_doc'] ?? 'certificado';
-            $dir     = $tipo === 'recibo' ? $reciboDir : $certDir;
+            $eid     = (int)($_POST['empleado_id'] ?? 0);
+            $tipo    = in_array($_POST['tipo_doc'] ?? '', ['certificado','recibo'])
+                       ? $_POST['tipo_doc'] : 'certificado';
             $archivo = $_FILES['documento'];
+            $dir     = $publicPath . '/docs/empleados/' . $eid . '/' . $tipo . 's';
 
-            if ($archivo['error'] === UPLOAD_ERR_OK) {
+            if (!is_dir($dir)) mkdir($dir, 0755, true);
+
+            if ($eid > 0 && $archivo['error'] === UPLOAD_ERR_OK) {
                 $ext     = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
                 $allowed = ['pdf','jpg','jpeg','png'];
-                if (!in_array($ext, $allowed)) {
-                    $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Solo se permiten PDF, JPG, PNG'];
-                } else {
+                if (in_array($ext, $allowed)) {
                     $nombre = date('Ymd_His') . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $archivo['name']);
+                    $ruta   = '/docs/empleados/' . $eid . '/' . $tipo . 's/' . $nombre;
                     move_uploaded_file($archivo['tmp_name'], $dir . '/' . $nombre);
+                    $dm->crear($eid, $tipo, $nombre, $ruta, $usuarioId);
                     $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Documento subido correctamente'];
+                } else {
+                    $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Solo PDF, JPG, PNG'];
                 }
-            } else {
-                $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Error al subir el archivo'];
             }
-            header('Location: ' . App::baseUrl() . '/empleado/docs?id=' . $id);
+            header('Location: ' . App::baseUrl() . '/empleado/docs');
             exit;
         }
 
-        // Eliminar documento
+        // ── Eliminar documento ──
         if (isset($_GET['del'])) {
-            $tipo = $_GET['tipo'] ?? 'certificado';
-            $dir  = $tipo === 'recibo' ? $reciboDir : $certDir;
+            $eid  = (int)($_GET['eid'] ?? 0);
+            $tipo = in_array($_GET['tipo'] ?? '', ['certificado','recibo']) ? $_GET['tipo'] : 'certificado';
             $safe = basename($_GET['del']);
-            $fp   = $dir . '/' . $safe;
+            $fp   = $publicPath . '/docs/empleados/' . $eid . '/' . $tipo . 's/' . $safe;
             if (file_exists($fp)) unlink($fp);
+            $dm->eliminarPorArchivo($eid, $safe);
             $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Documento eliminado'];
-            header('Location: ' . App::baseUrl() . '/empleado/docs?id=' . $id);
+            header('Location: ' . App::baseUrl() . '/empleado/docs');
             exit;
         }
 
-        $certificados = file_exists($certDir)  ? array_values(array_filter(scandir($certDir),   fn($f) => !in_array($f, ['.','..','.gitkeep']))) : [];
-        $recibos      = file_exists($reciboDir) ? array_values(array_filter(scandir($reciboDir), fn($f) => !in_array($f, ['.','..','.gitkeep']))) : [];
+        // ── Cargar docs indexados por empleado_id ──
+        $certificados = [];
+        $recibos      = [];
+
+        foreach ($dm->listarTodos('certificado') as $doc) {
+            $doc['nombre_display'] = preg_replace('/^\d{8}_\d{6}_/', '', $doc['nombre_archivo']);
+            $certificados[$doc['empleado_id']][] = $doc;
+        }
+        foreach ($dm->listarTodos('recibo') as $doc) {
+            $doc['nombre_display'] = preg_replace('/^\d{8}_\d{6}_/', '', $doc['nombre_archivo']);
+            $recibos[$doc['empleado_id']][] = $doc;
+        }
 
         static::path();
         $head   = SiteController::head();
@@ -221,19 +222,19 @@ class EmpleadoController extends Controller
         $footer = SiteController::footer();
 
         Response::render($this->viewDir(__NAMESPACE__), 'docs', [
-            'title'        => 'Documentos · ' . $empleado['apellido'] . ' ' . $empleado['nombre'],
+            'title'        => 'Gestión de documentos',
             'head'         => $head,
             'nav'          => $nav,
             'footer'       => $footer,
             'ruta'         => App::baseUrl(),
-            'empleado'     => $empleado,
+            'empleados'    => $empleados,
             'certificados' => $certificados,
             'recibos'      => $recibos,
             'flash'        => $flash,
         ]);
     }
 
-    /** Mis documentos — el empleado sube/elimina sus certificados, recibos solo lectura */
+    /** Mis documentos — el empleado sube/elimina sus certificados; recibos solo lectura */
     public function actionMisdocs()
     {
         SesionController::requireLogin();
@@ -244,12 +245,13 @@ class EmpleadoController extends Controller
             exit;
         }
 
-        $em       = new EmpleadoModel();
-        $empleado = $em->obtenerPorId($empleadoId);
-
-        $docsBase  = realpath(__DIR__ . '/../../public') . '/docs/empleados/' . $empleadoId;
-        $certDir   = $docsBase . '/certificados';
-        $reciboDir = $docsBase . '/recibos';
+        $em         = new EmpleadoModel();
+        $dm         = new DocumentoModel();
+        $empleado   = $em->obtenerPorId($empleadoId);
+        $usuarioId  = (int)($_SESSION['user_id'] ?? 0);
+        $publicPath = realpath(__DIR__ . '/../../public');
+        $certDir    = $publicPath . '/docs/empleados/' . $empleadoId . '/certificados';
+        $reciboDir  = $publicPath . '/docs/empleados/' . $empleadoId . '/recibos';
 
         foreach ([$certDir, $reciboDir] as $dir) {
             if (!is_dir($dir)) mkdir($dir, 0755, true);
@@ -258,18 +260,20 @@ class EmpleadoController extends Controller
         $flash = $_SESSION['flash'] ?? null;
         if (isset($_SESSION['flash'])) unset($_SESSION['flash']);
 
-        // Subir certificado (solo certificados, no recibos)
+        // Subir certificado propio
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['documento'])) {
             $archivo = $_FILES['documento'];
             if ($archivo['error'] === UPLOAD_ERR_OK) {
                 $ext     = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
                 $allowed = ['pdf','jpg','jpeg','png'];
-                if (!in_array($ext, $allowed)) {
-                    $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Solo se permiten PDF, JPG, PNG'];
-                } else {
+                if (in_array($ext, $allowed)) {
                     $nombre = date('Ymd_His') . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $archivo['name']);
+                    $ruta   = '/docs/empleados/' . $empleadoId . '/certificados/' . $nombre;
                     move_uploaded_file($archivo['tmp_name'], $certDir . '/' . $nombre);
+                    $dm->crear($empleadoId, 'certificado', $nombre, $ruta, $usuarioId);
                     $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Certificado subido correctamente'];
+                } else {
+                    $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Solo se permiten PDF, JPG, PNG'];
                 }
             } else {
                 $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Error al subir el archivo'];
@@ -278,18 +282,24 @@ class EmpleadoController extends Controller
             exit;
         }
 
-        // Eliminar certificado propio (solo certificados)
+        // Eliminar certificado propio
         if (isset($_GET['del'])) {
             $safe = basename($_GET['del']);
             $fp   = $certDir . '/' . $safe;
             if (file_exists($fp)) unlink($fp);
+            $dm->eliminarPorArchivo($empleadoId, $safe);
             $_SESSION['flash'] = ['type' => 'ok', 'msg' => 'Certificado eliminado'];
             header('Location: ' . App::baseUrl() . '/empleado/misdocs');
             exit;
         }
 
-        $certificados = file_exists($certDir)  ? array_values(array_filter(scandir($certDir),   fn($f) => !in_array($f, ['.','..','.gitkeep']))) : [];
-        $recibos      = file_exists($reciboDir) ? array_values(array_filter(scandir($reciboDir), fn($f) => !in_array($f, ['.','..','.gitkeep']))) : [];
+        // Traer desde DB con fecha y quién subió
+        $rawCerts   = $dm->listarPorEmpleado($empleadoId, 'certificado');
+        $rawRecibos = $dm->listarPorEmpleado($empleadoId, 'recibo');
+
+        foreach ($rawCerts   as &$d) $d['nombre_display'] = preg_replace('/^\d{8}_\d{6}_/', '', $d['nombre_archivo']);
+        foreach ($rawRecibos as &$d) $d['nombre_display'] = preg_replace('/^\d{8}_\d{6}_/', '', $d['nombre_archivo']);
+        unset($d);
 
         static::path();
         $head   = SiteController::head();
@@ -303,8 +313,8 @@ class EmpleadoController extends Controller
             'footer'       => $footer,
             'ruta'         => App::baseUrl(),
             'empleado'     => $empleado,
-            'certificados' => $certificados,
-            'recibos'      => $recibos,
+            'certificados' => $rawCerts,
+            'recibos'      => $rawRecibos,
             'flash'        => $flash,
         ]);
     }
