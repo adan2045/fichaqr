@@ -6,13 +6,6 @@ http://localhost/fichaqr/login/login
 
 
 
-
-
-
-
-
-
-
 Credenciales creadas (pass: 123456)
 
 admin@demo.local / 123456
@@ -20,3 +13,10 @@ admin@demo.local / 123456
 jefe@demo.local / 123456
 
 empleado1@demo.local / 123456
+
+
+
+fichadas con los ultimos 4 del dni 
+001 juan 1222
+002 maria 2333
+003 lucas 8777
