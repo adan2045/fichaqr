@@ -44,12 +44,63 @@
             <label class="label">Email <small style="color:var(--fq-muted)">(será el usuario de acceso)</small></label>
             <input class="input" name="email" type="email" placeholder="nombre@empresa.com" value="<?=htmlspecialchars($datos['email'] ?? '')?>">
           </div>
+
+          <?php
+            $rolSesion = strtolower(trim($_SESSION['user_rol'] ?? ''));
+            $esAdmin   = $rolSesion === 'admin';
+            $rolActual = $datos['rol'] ?? 'empleado';
+          ?>
+          <?php if ($esAdmin): ?>
+          <!-- Solo admin puede asignar rol -->
+          <div style="grid-column: 1 / -1;">
+            <label class="label" style="margin-bottom:8px;">Rol</label>
+            <div style="display:flex; gap:10px;" id="rol-opciones">
+
+              <label id="lbl-empleado" style="
+                display:flex; align-items:center; gap:10px; cursor:pointer;
+                padding:11px 16px; border-radius:12px; flex:1;
+                border:2px solid <?=$rolActual==='empleado'?'rgba(0,229,160,.5)':'rgba(255,255,255,.1)'?>;
+                background:<?=$rolActual==='empleado'?'rgba(0,229,160,.06)':'rgba(255,255,255,.02)'?>;
+                transition: border-color .15s, background .15s;">
+                <input type="radio" name="rol" value="empleado"
+                       <?=$rolActual==='empleado'?'checked':''?>
+                       style="accent-color:#00e5a0;"
+                       onchange="resaltarRol()">
+                <div>
+                  <div style="font-weight:700; font-size:13px; color:#00e5a0;">👷 Empleado</div>
+                  <div style="font-size:11px; color:#7b7b9a; margin-top:1px;">Solo puede fichar y ver sus fichadas</div>
+                </div>
+              </label>
+
+              <label id="lbl-jefe" style="
+                display:flex; align-items:center; gap:10px; cursor:pointer;
+                padding:11px 16px; border-radius:12px; flex:1;
+                border:2px solid <?=$rolActual==='jefe'?'rgba(167,139,250,.5)':'rgba(255,255,255,.1)'?>;
+                background:<?=$rolActual==='jefe'?'rgba(167,139,250,.06)':'rgba(255,255,255,.02)'?>;
+                transition: border-color .15s, background .15s;">
+                <input type="radio" name="rol" value="jefe"
+                       <?=$rolActual==='jefe'?'checked':''?>
+                       style="accent-color:#a78bfa;"
+                       onchange="resaltarRol()">
+                <div>
+                  <div style="font-weight:700; font-size:13px; color:#a78bfa;">🧑‍💼 Jefe</div>
+                  <div style="font-size:11px; color:#7b7b9a; margin-top:1px;">Puede gestionar fichadas y el panel admin</div>
+                </div>
+              </label>
+
+            </div>
+          </div>
+          <?php else: ?>
+          <!-- Jefe: siempre crea empleados, sin opción -->
+          <input type="hidden" name="rol" value="empleado">
+          <?php endif; ?>
+
         </div>
 
         <div style="height:10px"></div>
 
         <label class="label" style="display:flex; align-items:center; gap:8px;">
-          <input type="checkbox" name="activo" checked>
+          <input type="checkbox" name="activo" <?=!empty($datos['activo'])?'checked':''?>>
           Activo
         </label>
 
@@ -60,5 +111,18 @@
   </main>
 
   <?=$footer?>
+
+  <script>
+  function resaltarRol() {
+    const esJefe = document.querySelector('input[name="rol"][value="jefe"]')?.checked;
+    const lEmp  = document.getElementById('lbl-empleado');
+    const lJefe = document.getElementById('lbl-jefe');
+    if (!lEmp || !lJefe) return;
+    lEmp.style.borderColor  = esJefe ? 'rgba(255,255,255,.1)' : 'rgba(0,229,160,.5)';
+    lEmp.style.background   = esJefe ? 'rgba(255,255,255,.02)' : 'rgba(0,229,160,.06)';
+    lJefe.style.borderColor = esJefe ? 'rgba(167,139,250,.5)' : 'rgba(255,255,255,.1)';
+    lJefe.style.background  = esJefe ? 'rgba(167,139,250,.06)' : 'rgba(255,255,255,.02)';
+  }
+  </script>
 </body>
 </html>

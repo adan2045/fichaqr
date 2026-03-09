@@ -194,12 +194,12 @@
             <button class="login-fq__btn login-fq__btn--primary" type="submit" name="ingreso" id="fq-submit-btn">
               Entrar →
             </button>
-            <a class="login-fq__btn" href="<?=$ruta?>/terminal/index">Terminal QR</a>
+            <a class="login-fq__btn" href="<?=$ruta?>/terminal/index"></a>
           </div>
         </form>
 
         <div class="login-fq__helper">
-          Tip: si no tenés usuario, creá admin desde tools/crear_admin.php
+          
         </div>
       </div>
     </div>

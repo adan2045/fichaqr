@@ -20,7 +20,7 @@ class EmpleadoController extends Controller
         $footer = SiteController::footer();
 
         $errores = [];
-        $datos   = ['legajo'=>'','nombre'=>'','apellido'=>'','dni'=>'','email'=>'','activo'=>1];
+        $datos   = ['legajo'=>'','nombre'=>'','apellido'=>'','dni'=>'','email'=>'','activo'=>1,'rol'=>'empleado'];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $datos['legajo']   = trim($_POST['legajo']   ?? '');
@@ -29,6 +29,11 @@ class EmpleadoController extends Controller
             $datos['dni']      = trim($_POST['dni']      ?? '');
             $datos['email']    = trim($_POST['email']    ?? '');
             $datos['activo']   = isset($_POST['activo']) ? 1 : 0;
+
+            // rol: solo admin puede asignar jefe, cualquier otro valor → empleado
+            $rolSesion     = strtolower(trim($_SESSION['user_rol'] ?? ''));
+            $rolPost       = trim($_POST['rol'] ?? 'empleado');
+            $datos['rol']  = ($rolSesion === 'admin' && $rolPost === 'jefe') ? 'jefe' : 'empleado';
 
             if ($datos['nombre']   === '') $errores['nombre']   = 'Requerido';
             if ($datos['apellido'] === '') $errores['apellido'] = 'Requerido';
@@ -51,15 +56,15 @@ class EmpleadoController extends Controller
                         $datos['activo']
                     );
 
-                    // Crear usuario automático con rol empleado
+                    // Crear usuario con el rol correspondiente
                     $um           = new UsuarioModel();
                     $loginUsuario = $datos['email'] !== '' ? $datos['email'] : $datos['legajo'];
                     $passDefault  = $datos['dni'];
-                    $um->crear($loginUsuario, $passDefault, 'empleado', $nuevoId);
+                    $um->crear($loginUsuario, $passDefault, $datos['rol'], $nuevoId);
 
                     $_SESSION['flash'] = [
                         'type' => 'ok',
-                        'msg'  => "Empleado creado. Usuario: <strong>{$loginUsuario}</strong> · Contraseña: <strong>{$passDefault}</strong>"
+                        'msg'  => "✅ Empleado creado · Usuario: {$loginUsuario} · Contraseña inicial: {$passDefault}"
                     ];
                     header('Location: ' . App::baseUrl() . '/empleado/listado');
                     exit;
@@ -188,7 +193,6 @@ class EmpleadoController extends Controller
         $flash = $_SESSION['flash'] ?? null;
         if (isset($_SESSION['flash'])) unset($_SESSION['flash']);
 
-        // ── Subir documento ──
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['documento'])) {
             $eid     = (int)($_POST['empleado_id'] ?? 0);
             $tipo    = in_array($_POST['tipo_doc'] ?? '', ['certificado','recibo'])
@@ -215,7 +219,6 @@ class EmpleadoController extends Controller
             exit;
         }
 
-        // ── Eliminar documento ──
         if (isset($_GET['del'])) {
             $eid  = (int)($_GET['eid'] ?? 0);
             $tipo = in_array($_GET['tipo'] ?? '', ['certificado','recibo']) ? $_GET['tipo'] : 'certificado';
@@ -228,7 +231,6 @@ class EmpleadoController extends Controller
             exit;
         }
 
-        // ── Cargar docs indexados por empleado_id ──
         $certificados = [];
         $recibos      = [];
 
@@ -285,7 +287,6 @@ class EmpleadoController extends Controller
         $flash = $_SESSION['flash'] ?? null;
         if (isset($_SESSION['flash'])) unset($_SESSION['flash']);
 
-        // Subir certificado propio
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['documento'])) {
             $archivo = $_FILES['documento'];
             if ($archivo['error'] === UPLOAD_ERR_OK) {
@@ -307,7 +308,6 @@ class EmpleadoController extends Controller
             exit;
         }
 
-        // Eliminar certificado propio
         if (isset($_GET['del'])) {
             $safe = basename($_GET['del']);
             $fp   = $certDir . '/' . $safe;
@@ -318,7 +318,6 @@ class EmpleadoController extends Controller
             exit;
         }
 
-        // Traer desde DB con fecha y quién subió
         $rawCerts   = $dm->listarPorEmpleado($empleadoId, 'certificado');
         $rawRecibos = $dm->listarPorEmpleado($empleadoId, 'recibo');
 

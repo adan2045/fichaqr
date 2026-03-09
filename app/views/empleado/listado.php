@@ -12,7 +12,7 @@
     <div class="fq-actions" style="justify-content: space-between; align-items:center; margin-bottom:14px;">
       <div>
         <h2 style="margin:0;">Empleados</h2>
-        <div class="muted" style="margin-top:4px; font-family:monospace; font-size:12px;">CRUD básico</div>
+        <div class="muted" style="margin-top:4px; font-family:monospace; font-size:12px;"></div>
       </div>
       <div class="fq-actions">
         <a class="fq-btn" href="<?=$ruta?>/admin/gestion">Volver</a>
